@@ -106,7 +106,7 @@ public:
     }
 };
 
-class ExpConverter {
+class InToPostConvertor {
 public:
 
     int precedence(char op) {
@@ -155,6 +155,62 @@ public:
         }
 
         return postfix;
+    }
+};
+
+class PostToInConvertor {
+public:
+    double evaluatePostfix(const string &postfix) {
+        Stack evaluationStack(postfix.length());
+
+        for (size_t i = 0; i < postfix.length(); ++i) {
+            char c = postfix[i];
+
+
+            if (isdigit(c)) {
+                evaluationStack.push(c - '0');
+            } else if (isOperator(c)) {
+                if (evaluationStack.size() < 2) {
+                    throw invalid_argument("Not enough operands");
+                }
+
+                double operand2 = evaluationStack.pop();
+                double operand1 = evaluationStack.pop();
+                double result = applyOperator(c, operand1, operand2);
+                evaluationStack.push(result);
+            }
+        }
+
+        if (evaluationStack.size() != 1) {
+            throw invalid_argument("Remaining operands in stack");
+        }
+
+        return evaluationStack.pop();
+    }
+
+private:
+
+    bool isOperator(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
+    }
+
+
+    double applyOperator(char op, double operand1, double operand2) {
+        switch (op) {
+            case '+':
+                return operand1 + operand2;
+            case '-':
+                return operand1 - operand2;
+            case '*':
+                return operand1 * operand2;
+            case '/':
+                if (operand2 == 0) throw runtime_error("Division by zero error");
+                return operand1 / operand2;
+            case '^':
+                return pow(operand1, operand2);
+            default:
+                throw invalid_argument("Unsupported operator");
+        }
     }
 };
 
