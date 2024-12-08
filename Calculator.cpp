@@ -106,3 +106,56 @@ public:
     }
 };
 
+class ExpConverter {
+public:
+
+    int precedence(char op) {
+        if (op == '+' || op == '-') return 1;
+        if (op == '*' || op == '/') return 2;
+        if (op == '^') return 3;
+        return 0;
+    }
+
+    bool isOperator(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
+    }
+
+
+    string InToPost(const string &infix) {
+        string postfix;
+        Stack operatorStack(infix.length());
+
+        for (size_t i = 0; i < infix.length(); ++i) {
+            char c = infix[i];
+
+
+            if (isalnum(c)) {
+                postfix += c;
+            } else if (c == '(') {
+                operatorStack.push(c);
+            } else if (c == ')') {
+                while (!operatorStack.isEmpty() && operatorStack.peek() != '(') {
+                    postfix += operatorStack.pop();
+                }
+                if (!operatorStack.isEmpty() && operatorStack.peek() == '(') {
+                    operatorStack.pop();
+                }
+            } else if (isOperator(c)) {
+                while (!operatorStack.isEmpty() &&
+                       precedence(operatorStack.peek()) >= precedence(c)) {
+                    postfix += operatorStack.pop();
+                }
+                operatorStack.push(c);
+            }
+        }
+
+
+        while (!operatorStack.isEmpty()) {
+            postfix += operatorStack.pop();
+        }
+
+        return postfix;
+    }
+};
+
+
