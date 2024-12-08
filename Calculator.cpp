@@ -1,113 +1,96 @@
 #include <iostream>
-#include <vector>
 #include <stdexcept>
+#include <string>
+#include <cmath>
 
 using namespace std;
 
-class Stack {
+
+class MyStack {
 private:
-    int maxSize;
-    int top;
-    double *stack;
+    int capacity;
+    int topIndex;
+    double *elements;
+
 public:
-    Stack(int size) {
-        maxSize = size;
-        top = -1;
-        stack = new double[maxSize];
+    MyStack(int maxSize) {
+        capacity = maxSize;
+        topIndex = -1;
+        elements = new double[capacity];
     }
 
     void push(double value) {
-        if (top == maxSize - 1) {
-            throw overflow_error("Stack Overflow");
+        if (topIndex == capacity - 1) {
+            throw overflow_error("Stack is full");
         }
-        stack[++top] = value;
+        elements[++topIndex] = value;
     }
 
     double pop() {
-        if (top == -1) {
-            throw underflow_error("Stack Underflow");
-        }
-        return stack[top--];
-    }
-
-    double peek() const {
-        if (top == -1) {
+        if (topIndex == -1) {
             throw underflow_error("Stack is empty");
         }
-        return stack[top];
+        return elements[topIndex--];
+    }
+
+    double top() const {
+        if (topIndex == -1) {
+            throw underflow_error("Stack is empty");
+        }
+        return elements[topIndex];
     }
 
     bool isEmpty() const {
-        return top == -1;
+        return topIndex == -1;
     }
 
     int size() const {
-        return top + 1;
+        return topIndex + 1;
     }
 
-    ~Stack() {
-        delete[] stack;
-    }
-};
-
-class Queue {
-    int front;
-    int rear;
-    int count;
-    int maxSize;
-    double *queue;
-public:
-
-    Queue(int size) {
-        maxSize = size;
-        front = 0;
-        rear = -1;
-        count = 0;
-        queue = new double[maxSize];
-    }
-
-    void enqueue(double value) {
-        if (count == maxSize) {
-            throw overflow_error("Queue Overflow!");
-        }
-        rear = (rear + 1) % maxSize;
-        queue[rear] = value;
-        count++;
-    }
-
-    double dequeue() {
-        if (count == 0) {
-            throw underflow_error("Queue Underflow!");
-        }
-        double value = queue[front];
-        front = (front + 1) % maxSize;
-        count--;
-        return value;
-    }
-
-    double peek() const {
-        if (count == 0) {
-            throw underflow_error("Queue is empty");
-        }
-        return queue[front];
-
-    }
-
-    bool isEmpty() const {
-        return count == 0;
-    }
-
-    int size() const {
-        return count;
-    }
-
-    ~Queue() {
-        delete[] queue;
+    ~MyStack() {
+        delete[] elements;
     }
 };
 
-class InToPostConvertor {
+
+class NotationConverter {
 public:
+    string toPostfix(const string &infix) {
+        string postfix;
+        MyStack operators(infix.length());
+
+        for (char ch: infix) {
+            if (isalnum(ch)) {
+                postfix = postfix + ch;
+            } else if (ch == '(') {
+                operators.push(ch);
+            } else if (ch == ')') {
+                while (!operators.isEmpty() && operators.top() != '(') {
+                    postfix += operators.pop();
+                }
+                if (!operators.isEmpty()) {
+                    operators.pop();
+                }
+            } else if (isOperator(ch)) {
+                while (!operators.isEmpty() && precedence(operators.top()) >= precedence(ch)) {
+                    postfix += operators.pop();
+                }
+                operators.push(ch);
+            }
+        }
+
+        while (!operators.isEmpty()) {
+            postfix += operators.pop();
+        }
+
+        return postfix;
+    }
+
+private:
+    bool isOperator(char op) {
+        return op == '+' || op == '-' || op == '*' || op == '/' || op == '^';
+    }
 
     int precedence(char op) {
         if (op == '+' || op == '-') return 1;
@@ -115,103 +98,111 @@ public:
         if (op == '^') return 3;
         return 0;
     }
-
-    bool isOperator(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
-    }
+};
 
 
-    string InToPost(const string &infix) {
-        string postfix;
-        Stack operatorStack(infix.length());
+class PostfixSolver {
+public:
+    double solve(const string &postfix) {
+        MyStack stack(postfix.length());
 
-        for (size_t i = 0; i < infix.length(); ++i) {
-            char c = infix[i];
-
-
-            if (isalnum(c)) {
-                postfix += c;
-            } else if (c == '(') {
-                operatorStack.push(c);
-            } else if (c == ')') {
-                while (!operatorStack.isEmpty() && operatorStack.peek() != '(') {
-                    postfix += operatorStack.pop();
+        for (char ch: postfix) {
+            if (isdigit(ch)) {
+                stack.push(ch - '0');
+            } else if (isOperator(ch)) {
+                if (stack.size() < 2) {
+                    throw invalid_argument("not enough operands");
                 }
-                if (!operatorStack.isEmpty() && operatorStack.peek() == '(') {
-                    operatorStack.pop();
-                }
-            } else if (isOperator(c)) {
-                while (!operatorStack.isEmpty() &&
-                       precedence(operatorStack.peek()) >= precedence(c)) {
-                    postfix += operatorStack.pop();
-                }
-                operatorStack.push(c);
+                double b = stack.pop();
+                double a = stack.pop();
+                stack.push(apply(ch, a, b));
             }
         }
 
-
-        while (!operatorStack.isEmpty()) {
-            postfix += operatorStack.pop();
+        if (stack.size() != 1) {
+            throw invalid_argument("too many operands");
         }
 
-        return postfix;
+        return stack.pop();
+    }
+
+private:
+    bool isOperator(char op) {
+        return op == '+' || op == '-' || op == '*' || op == '/' || op == '^';
+    }
+
+    double apply(char op, double a, double b) {
+        switch (op) {
+            case '+':
+                return a + b;
+            case '-':
+                return a - b;
+            case '*':
+                return a * b;
+            case '/':
+                if (b == 0) throw runtime_error("Division by zero");
+                return a / b;
+            case '^':
+                return pow(a, b);
+            default:
+                throw invalid_argument("Unknown operator");
+        }
     }
 };
 
-class PostToInConvertor {
+
+struct Node {
+    string variable;
+    double value;
+    string equation;
+    Node *next;
+
+    Node(string var, string eqn) : variable(var), equation(eqn), value(0), next(nullptr) {}
+};
+
+
+class EquationSolver {
+private:
+    Node *head;
+
 public:
-    double evaluatePostfix(const string &postfix) {
-        Stack evaluationStack(postfix.length());
+    EquationSolver() : head(nullptr) {}
 
-        for (size_t i = 0; i < postfix.length(); ++i) {
-            char c = postfix[i];
+    void addEquation(const string &var, const string &expr) {
+        Node *newNode = new Node(var, expr);
+        newNode->next = head;
+        head = newNode;
+    }
 
 
-            if (isdigit(c)) {
-                evaluationStack.push(c - '0');
-            } else if (isOperator(c)) {
-                if (evaluationStack.size() < 2) {
-                    throw invalid_argument("Not enough operands");
-                }
+    void solveAll() {
+        Node *current = head;
+        while (current != nullptr) {
+            solveVariable(current);
+            current = current->next;
+        }
+    }
 
-                double operand2 = evaluationStack.pop();
-                double operand1 = evaluationStack.pop();
-                double result = applyOperator(c, operand1, operand2);
-                evaluationStack.push(result);
+
+    double getValue(const string &var) {
+        Node *current = head;
+        while (current != nullptr) {
+            if (current->variable == var) {
+                return current->value;
             }
+            current = current->next;
         }
-
-        if (evaluationStack.size() != 1) {
-            throw invalid_argument("Remaining operands in stack");
-        }
-
-        return evaluationStack.pop();
+        throw invalid_argument("Variable not found: " + var);
     }
 
 private:
 
-    bool isOperator(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
-    }
+    void solveVariable(Node *node) {
+        NotationConverter converter;
+        PostfixSolver solver;
 
+        string postfix = converter.toPostfix(node->equation);
 
-    double applyOperator(char op, double operand1, double operand2) {
-        switch (op) {
-            case '+':
-                return operand1 + operand2;
-            case '-':
-                return operand1 - operand2;
-            case '*':
-                return operand1 * operand2;
-            case '/':
-                if (operand2 == 0) throw runtime_error("Division by zero error");
-                return operand1 / operand2;
-            case '^':
-                return pow(operand1, operand2);
-            default:
-                throw invalid_argument("Unsupported operator");
-        }
+        node->value = solver.solve(postfix);
     }
 };
-
-
