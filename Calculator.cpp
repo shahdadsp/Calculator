@@ -50,3 +50,59 @@ public:
     }
 };
 
+class Queue {
+    int front;
+    int rear;
+    int count;
+    int maxSize;
+    double *queue;
+public:
+
+    Queue(int size) {
+        maxSize = size;
+        front = 0;
+        rear = -1;
+        count = 0;
+        queue = new double[maxSize];
+    }
+
+    void enqueue(double value) {
+        if (count == maxSize) {
+            throw overflow_error("Queue Overflow!");
+        }
+        rear = (rear + 1) % maxSize;
+        queue[rear] = value;
+        count++;
+    }
+
+    double dequeue() {
+        if (count == 0) {
+            throw underflow_error("Queue Underflow!");
+        }
+        double value = queue[front];
+        front = (front + 1) % maxSize;
+        count--;
+        return value;
+    }
+
+    double peek() const {
+        if (count == 0) {
+            throw underflow_error("Queue is empty");
+        }
+        return queue[front];
+
+    }
+
+    bool isEmpty() const {
+        return count == 0;
+    }
+
+    int size() const {
+        return count;
+    }
+
+    ~Queue() {
+        delete[] queue;
+    }
+};
+
