@@ -5,7 +5,7 @@
 
 using namespace std;
 
-
+//Stack implementation
 class MyStack {
 private:
     int capacity;
@@ -54,6 +54,7 @@ public:
 };
 
 
+//a function for converting an infix notation to a postfix for the calculator
 class NotationConverter {
 public:
     string toPostfix(const string &infix) {
@@ -100,27 +101,29 @@ private:
     }
 };
 
-
+// this function solves the converted version of the infix notation as a postfix one.
 class PostfixSolver {
 public:
     double solve(const string &postfix) {
         MyStack stack(postfix.length());
-
         for (char ch: postfix) {
             if (isdigit(ch)) {
                 stack.push(ch - '0');
             } else if (isOperator(ch)) {
                 if (stack.size() < 2) {
-                    throw invalid_argument("not enough operands");
+                    throw invalid_argument("Invalid expression: not enough operands");
                 }
                 double b = stack.pop();
                 double a = stack.pop();
                 stack.push(apply(ch, a, b));
+            } else if (isAdvancedFunction(ch)) {
+                double operand = stack.pop();
+                stack.push(applyAdvancedFunction(ch, operand));
             }
         }
 
         if (stack.size() != 1) {
-            throw invalid_argument("too many operands");
+            throw invalid_argument("Invalid expression: too many operands");
         }
 
         return stack.pop();
@@ -129,6 +132,10 @@ public:
 private:
     bool isOperator(char op) {
         return op == '+' || op == '-' || op == '*' || op == '/' || op == '^';
+    }
+
+    bool isAdvancedFunction(char op) {
+        return op == 's' || op == 'c' || op == 't' || op == 'l' || op == 'e';
     }
 
     double apply(char op, double a, double b) {
@@ -146,6 +153,30 @@ private:
                 return pow(a, b);
             default:
                 throw invalid_argument("Unknown operator");
+        }
+    }
+
+    // for showing the history of calculations
+    void showHistory() const {
+        for (const string& entry : history) {
+            cout << entry << endl;
+        }
+    }
+// for using more advanced functions as a calculator
+    double applyAdvancedFunction(char op, double operand) {
+        switch (op) {
+            case 's':
+                return sin(operand);
+            case 'c':
+                return cos(operand);
+            case 't':
+                return tan(operand);
+            case 'l':
+                return log(operand);
+            case 'e':
+                return exp(operand);
+            default:
+                throw invalid_argument;
         }
     }
 };
